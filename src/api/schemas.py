@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 
-class portfolios(BaseModel):
+class portfolio(BaseModel):
     id: int
     ticker: str
     createdDT: str
@@ -18,8 +18,21 @@ class portfolio_entry(BaseModel):
     price: int
     userId: int
 
-class User(BaseModel):
-    id: int
+
+class UserBase(BaseModel):
+    email: str
     name: str
+
+class UserCreate(UserBase):
+    password: str
+
+
+class User(UserBase):
+    email: str
     class Config:
         orm_mode = True
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
