@@ -1,36 +1,50 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 
-class portfolio(BaseModel):
+class portfolioBase(BaseModel):
+    ticker: str
+    volume: int
+    price: int
+
+
+class portfolio(portfolioBase):
     id: int
-    ticker: str
-    createdDT: str
-    volume: int
-    price: int
-    userId: int
+    userid: int
     class Config:
-        orm_mode = True
-        
+        from_attributes = True
 
-class portfolio_entry(BaseModel):
-    ticker: str
-    volume: int
-    price: int
-    userId: int
+
+class portfolioCreate(portfolioBase):
+    pass
+
+
+
+class portfolioReturn(portfolioBase):
+    created_at: datetime
+    class Config:
+        from_attributes = True
 
 
 class UserBase(BaseModel):
     email: str
     name: str
 
+
 class UserCreate(UserBase):
     password: str
 
 
 class User(UserBase):
-    email: str
+    id: int
+    role: int
     class Config:
-        orm_mode = True
+        from_attributes = True
+
+
+class UserReturn(UserBase):
+    class Config:
+        from_attributes = True
 
 
 class Token(BaseModel):

@@ -12,9 +12,6 @@ from .security import (
     get_hashed_password, 
     create_access_token
 )
-from dotenv import load_dotenv
-
-load_dotenv() 
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -35,17 +32,17 @@ def get_current_user(db: Session = Depends(get_db), payload: dict = Depends(chec
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    username = payload.get('sub')
-    if not username:
+    email = payload.get('sub')
+    if not email:
         raise cred_exception
-    user = crud.get_user(db, username=username)
+    user = crud.get_user_by_email(db, email=email)
     if not user:
         raise cred_exception
     return user
 
 
 @app.post('/token', response_model=schemas.Token)
-def request_token(
+async def request_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
@@ -54,7 +51,7 @@ def request_token(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"}
         )
-    user = crud.get_user(db, form_data.username)
+    user = crud.get_user_by_email(db, form_data.username)
     if not user:
         raise cred_except
     if not verify_password(form_data.password, user.password):
@@ -62,45 +59,49 @@ def request_token(
     
     access_token_expires = timedelta(minutes=30)
     access_token = create_access_token(
-        data={"sub": user.username}, expire_delta=access_token_expires
+        data={"sub": user.email}, expire_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
 @app.get("/")
-def root():
+async def root():
     return {"message": "personal finance API"}
 
 
-@app.post("/investment-portfolios/tickers/{ticker}", response_model=schemas.portfolio_entry)
-def update_portfolio(
-    ticker: str, userid:int, volume: int,
-    price: int, db: Session = Depends(get_db)
+@app.post(
+    "/investment-portfolios",
+    status_code=status.HTTP_201_CREATED, 
+    response_model=schemas.portfolioReturn
+)
+async def update_portfolio(
+    portfolio_entry: schemas.portfolioCreate, 
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(get_current_user)
 ):
-    updatedDT = datetime.now()
     return crud.update_portfolio(
-        db, userid=userid, ticker=ticker, 
-        volume=volume, price=price, updatedDT=updatedDT
+        db, user, portfolio_entry
     )
 
 
-@app.get('/investment-portfolios', response_model=schemas.portfolio)
-def get_portfolios(userid: str, skip: int=0, limit: int=100, db: Session = Depends(get_db)):
-    crud.get_portfolio(db, userid=userid, skip=skip, limit=limit)
+@app.get('/investment-portfolios', response_model=list[schemas.portfolioReturn])
+async def get_portfolios(
+    skip: int=0, 
+    limit: int=100, 
+    db: Session = Depends(get_db),
+    user: schemas.User = Depends(get_current_user)
+):
+    return crud.get_portfolio(db, skip=skip, limit=limit)
 
 
-@app.post('/user', status_code=status.HTTP_201_CREATED)
+@app.post('/user', status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturn)
 async def create_user(*, 
     db: Session = Depends(get_db),
-    secret_key: str | None,
-    user: schemas.User
+    user: schemas.UserCreate
 ):    
-    if not verify_password(secret_key, os.getenv('SECRET_NEW_USER_KEY')):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-    
     user.password = get_hashed_password(user.password)
-    user = crud.get_user(db, user.username)
-    if user:
+    db_user = crud.get_user_by_email(db, user.email)
+    if db_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail='User already exists'
@@ -108,4 +109,4 @@ async def create_user(*,
     user = crud.create_user(db, user)
     if not user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)        
-    return {"detail": "User created"}
+    return user

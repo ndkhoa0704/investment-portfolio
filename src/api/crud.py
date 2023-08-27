@@ -3,43 +3,44 @@ from . import models, schemas
 import datetime as dt
 
 
-def get_portfolio(db: Session, userid: int, skip: int = 0, limit: int = 100):
-    return db.query(models.portfolios)\
-        .where(models.portfolios.userid == userid)\
+def get_portfolio(
+    db: Session, 
+    user: schemas.User, 
+    skip: int = 0, 
+    limit: int = 100
+) -> list[schemas.portfolioReturn]:
+    return db.query(models.portfolio)\
+        .where(models.portfolio.userid == user.id)\
         .offset(skip).limit(limit).all()
 
 
 def update_portfolio(
     db: Session, 
-    ticker: str,
-    userid: int,
-    volume: int,
-    price: int, 
-    updatedDT: dt.datetime
+    user: schemas.User,
+    portfolio_entry: schemas.portfolioCreate
 ) -> schemas.portfolio:
-    porfolio_entry = models.portfolios(
-        ticker=ticker,
-        userid=userid,
-        volume=volume,
-        price=price,
-        createdDT=updatedDT
+    db_porfolio = models.portfolio(
+        ticker=portfolio_entry.ticker,
+        userid=user.id,
+        volume=portfolio_entry.volume,
+        price=portfolio_entry.price
     )
-    db.add(porfolio_entry)
+    db.add(db_porfolio)
     db.commit()
-    porfolio_entry = db.refresh(porfolio_entry)
-    return porfolio_entry
+    db.refresh(db_porfolio)
+    return db_porfolio
 
 
 def get_user_by_email(db: Session, email: str):
     return db.query(models.user).filter(models.user.email == email).first()
 
 
-def create_user(db: Session, user_data: schemas.UserCreate):
-    hased_password = user_data.password + 'hashed'
+def create_user(db: Session, user: schemas.UserCreate):
     user = models.user(
-        name=user_data.name,
-        email=user_data.email,
-        password=hased_password
+        name=user.name,
+        email=user.email,
+        password=user.password,
+        role=2
     )
     db.add(user)
     db.commit()

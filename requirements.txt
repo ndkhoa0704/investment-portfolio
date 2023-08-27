@@ -3,5 +3,7 @@ uvicorn[standard]
 psycopg2
 sqlalchemy
 python-jose
-passlib
+passlib[bcrypt] 
+pydantic_settings
 python-multipart
+requests

@@ -4,14 +4,15 @@ import os
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-
+from .config import settings
 
 pwd_contexet= CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-SECRET_KEY = os.getenv('SECRET_API_KEY')
+SECRET_KEY = settings.SECRET_API_KEY
 ALGORITHM = 'HS256'
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 
 def get_hashed_password(password: str) -> str:
@@ -27,7 +28,7 @@ def create_access_token(data: dict, expire_delta: timedelta | None = None):
     if expire_delta:
         expire = datetime.utcnow() + expire_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     data_cp.update({'exp': expire})
     return jwt.encode(data_cp, SECRET_KEY, algorithm=ALGORITHM)
 
