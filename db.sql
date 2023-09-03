@@ -1,12 +1,12 @@
 create table userRole
 (
-	id SERIAL primary key,
+	id int identity(1,1)  primary key,
 	description varchar(100) not null
 );
 
 create table userdb
 (
-	id SERIAL primary key,
+	id int identity(1,1)  primary key,
 	name varchar(500) not null,
 	password varchar(120) not null,
 	email varchar(200) unique not null,
@@ -16,11 +16,12 @@ create table userdb
 
 create table portfolio
 (
-	id SERIAL primary key,
+	id int identity(1,1)  primary key,
 	ticker varchar(10) not null,
-	price decimal(8,5) not null,
+	price int not null,
 	volume int not null,
-	userId int,
+	userid int,
+	created_at datetime not null,
 	constraint FK_userId foreign key(userId) references userdb(id)
 );
 

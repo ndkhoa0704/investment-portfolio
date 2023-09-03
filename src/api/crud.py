@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
-import datetime as dt
 
 
 def get_portfolio(
@@ -25,6 +24,7 @@ def update_portfolio(
         volume=portfolio_entry.volume,
         price=portfolio_entry.price
     )
+
     db.add(db_porfolio)
     db.commit()
     db.refresh(db_porfolio)

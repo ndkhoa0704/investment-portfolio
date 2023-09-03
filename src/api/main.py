@@ -3,7 +3,6 @@ from . import models, schemas, crud
 from .database import SessionLocal, engine
 from sqlalchemy.orm import Session
 from datetime import datetime
-import os
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
 from .security import (
@@ -12,6 +11,8 @@ from .security import (
     get_hashed_password, 
     create_access_token
 )
+import requests
+from ..stock_data.stockprice import get_VND_data
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -79,6 +80,13 @@ async def update_portfolio(
     db: Session = Depends(get_db),
     user: schemas.User = Depends(get_current_user)
 ):
+    # Check valid ticker 
+    res = get_VND_data(portfolio_entry.ticker)
+    if not res['data']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Ticker not found'
+        )
     return crud.update_portfolio(
         db, user, portfolio_entry
     )
