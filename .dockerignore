@@ -1,0 +1,8 @@
+.vscode
+.github
+prod.env
+README.md
+test.py
+.gitignore
+__pycache__
+db.sql
