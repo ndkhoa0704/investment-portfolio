@@ -14,6 +14,12 @@ create table userdb
 	constraint FK_role foreign key(role) references userRole(id)
 );
 
+create table transactionType
+(
+	id int identity(1,1) primary key,
+	description varchar(20) not null
+)
+
 create table portfolio
 (
 	id int identity(1,1)  primary key,
@@ -22,8 +28,14 @@ create table portfolio
 	volume int not null,
 	userid int,
 	created_at datetime not null,
+	trans_type int not null,
+	constraint FK_trans_type foreign key (trans_type) references transactionType(id),
 	constraint FK_userId foreign key(userId) references userdb(id)
 );
 
 insert into userRole(description) 
 values ('admin') , ('user');
+
+
+insert into transactionType(description)
+values ('buy'), ('sell')
