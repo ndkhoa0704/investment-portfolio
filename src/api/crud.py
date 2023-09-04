@@ -46,3 +46,15 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.commit()
     db.refresh(user)
     return user
+
+def create_admin(db: Session, user: schemas.UserCreate):
+    user = models.user(
+        name=user.name,
+        email=user.email,
+        password=user.password,
+        role=1
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user

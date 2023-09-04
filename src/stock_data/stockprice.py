@@ -50,5 +50,9 @@ def get_VND_data(ticker: str, start_date: str=None, end_date: str=None):
             break
         elif res.status_code != 403:
             raise HTTPError('Error code: ' + str(res.status_code))
-            
+        if res.status_code != 200:
+            continue
+        else:
+            break
     return res.json()
+

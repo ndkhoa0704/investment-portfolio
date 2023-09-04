@@ -11,8 +11,8 @@ from .security import (
     get_hashed_password, 
     create_access_token
 )
-import requests
 from ..stock_data.stockprice import get_VND_data
+from .config import settings
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -99,14 +99,19 @@ async def get_portfolios(
     db: Session = Depends(get_db),
     user: schemas.User = Depends(get_current_user)
 ):
-    return crud.get_portfolio(db, skip=skip, limit=limit)
+    return crud.get_portfolio(db, user, skip=skip, limit=limit)
 
 
 @app.post('/user', status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturn)
 async def create_user(*, 
     db: Session = Depends(get_db),
-    user: schemas.UserCreate
-):    
+    user: schemas.UserCreate,
+    admin: schemas.User = Depends(get_current_user)
+):  
+    # Check admin
+    if admin.role != 1:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    
     user.password = get_hashed_password(user.password)
     db_user = crud.get_user_by_email(db, user.email)
     if db_user:
@@ -118,3 +123,22 @@ async def create_user(*,
     if not user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)        
     return user
+
+
+if 'POST /admin' not in settings.EXCLUDE_ENDPOINTS:
+    @app.post('/admin', status_code=status.HTTP_201_CREATED, response_model=schemas.UserReturn)
+    async def create_admin(*, 
+        db: Session = Depends(get_db),
+        user: schemas.UserCreate,
+    ): 
+        user.password = get_hashed_password(user.password)
+        db_user = crud.get_user_by_email(db, user.email)
+        if db_user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail='User already exists'
+            )
+        user = crud.create_admin(db, user)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)        
+        return user

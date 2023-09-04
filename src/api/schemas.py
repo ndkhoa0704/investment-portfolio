@@ -1,11 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Literal
 
 
 class portfolioBase(BaseModel):
     ticker: str
-    volume: int
-    price: int
+    volume: int = Field(gt=0)
+    price: int = Field(gt=0)
+    trans_type: Literal[1,2]
 
 
 class portfolio(portfolioBase):
